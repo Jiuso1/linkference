@@ -1,0 +1,23 @@
+@startuml
+class InferenceTask{
+    - def id
+    - def model
+    - def input_data
+    - def processed_data
+    - def prediction
+    - def expiration_date
+    + def load_model(self, model)
+    + def preprocess(self, input_data)
+    + def infer(self, processed_data)
+    + def postprocess(self, prediction)
+}
+class Model{
+    - def id
+    - def path
+}   
+note bottom of Model: The path points to an ONXX file.
+enum Behavior{
+
+}
+InferenceTask "0..*" -- "1" Model : has
+@enduml

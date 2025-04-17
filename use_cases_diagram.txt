@@ -1,0 +1,39 @@
+@startuml
+"Data Engineer" as data_engineer
+
+usecase distribute_validation as "Distribute validation
+--
+Order to distribute the model validation 
+in all available LAN client computers."
+
+usecase check_validation_status as "Check validation status
+--
+Watch validation progress, 
+possible errors, and results."
+
+usecase cancel_validation as "Cancel validation
+--
+Order to stop the model validation 
+in all busy LAN client computers."
+
+usecase configure_validation_settings as "Configure validation settings
+--
+Watch current settings and be able to change them:
+Work hour, InferenceTask size, etc."
+
+usecase install_software as "Install software
+--
+Install all software in a simple way easily."
+
+usecase uninstall_software as "Uninstall software
+--
+Remove all software and its files easily."
+
+data_engineer --> distribute_validation
+data_engineer --> check_validation_status
+data_engineer --> cancel_validation
+data_engineer --> configure_validation_settings
+data_engineer --> install_software
+data_engineer --> uninstall_software
+
+@enduml
