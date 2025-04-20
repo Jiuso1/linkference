@@ -4,6 +4,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.linear_model import LogisticRegression
+from skl2onnx import to_onnx
+from skl2onnx.common.data_types import FloatTensorType
+from skl2onnx import convert_sklearn
+import onnxruntime as rt
 
 df = pd.read_csv('titanic.csv') # Parse titanic.csv as pandas DataFrame.
 
@@ -31,7 +35,7 @@ X_train_fill_na["Age"] = age_imputed #X_train_fill_na Age column is assigned to 
 categorical_features = ["Sex", "Cabin", "Embarked"] # Columns selected for dummying.
 X_train_categorical = X_train_fill_na[categorical_features.copy()] # Selected columns are saved in X_train_categorical. Null values are filled.
 
-ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False) #OneHotEncoder object is declared.
+ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False) # OneHotEncoder object is declared.
 
 # ohe is configured:
 ohe.fit(X_train_categorical) 
@@ -98,7 +102,6 @@ X_test_scaled = pd.DataFrame(
 
 # Concatenating categorical and numeric data:
 X_test_full = pd.concat([X_test_scaled, X_test_ohe], axis=1)
-X_test_full
 
 y_hat_test = logreg.predict(X_test_full) # Model predicts X_test_full, and saves the results in y_hat_test.
 
@@ -106,3 +109,22 @@ test_residuals = np.abs(y_test - y_hat_test) # y_test minus y_hat_test gives a v
 print(pd.Series(test_residuals, name="Residuals (counts)").value_counts()) # Prints absolute prediction hits and misses.
 print() # Prints a breakline.
 print(pd.Series(test_residuals, name="Residuals (proportions)").value_counts(normalize=True)) # Prints absolute prediction hits and misses.
+
+X_test_full = X_test_full.to_numpy() # Pandas Dataframe is casted to NumPy ndarray
+
+initial_type = [('float_input', FloatTensorType([None, X_test_full[0].size]))] # Each X_test_full row has the same number of columns than X_test_full[0]. That's X_test_full[0].size.
+onnx = convert_sklearn(logreg, initial_types=initial_type) # onnx object is declared with logreg classifier and initial_type.
+with open("logreg_titanic.onnx", "wb") as f: # onnx file is created:
+    f.write(onnx.SerializeToString()) # onnx object is written in file.
+
+sess = rt.InferenceSession("logreg_titanic.onnx", providers=["CPUExecutionProvider"]) # sess object is declared to run onnx file model in CPU.
+# Input and output names are saved:
+input_name = sess.get_inputs()[0].name 
+label_name = sess.get_outputs()[0].name
+
+pred_onnx = sess.run([label_name], {input_name: X_test_full.astype(np.float32)})[0] # sess predicts X_test_full (as type float32) and saves results in pred_onnx.
+# y_hat_test (scikit-learn prediction) and pred_onnx (ONNX prediction) are printed. Numbers are the same. Thus, ONNX works!
+print("y_hat_test:")
+print(y_hat_test)
+print("pred_onnx:")
+print(pred_onnx)
