@@ -12,12 +12,28 @@ class InferenceTask{
     + def postprocess(self, prediction)
 }
 class Model{
-    - def id
     - def path
+    - def framework
+    - def behavior
 }   
-note bottom of Model: The path points to an ONXX file.
-enum Behavior{
+note bottom of Model: The path points to a model file.
+class Server{
+    - def model
+    - def input_dataset
+    - def inference_task_list
+    + def test_prediction()
+}
+class Client{
 
 }
+enum Behavior{
+    LOGISTIC_REGRESSION
+}
+enum Framework{
+    SCIKIT_LEARN
+    TRANSFORMERS
+}
 InferenceTask "0..*" -- "1" Model : has
+Server "1" -- "0..*" InferenceTask : distributes
+Client "2" -- "0..*" InferenceTask : computes
 @enduml
